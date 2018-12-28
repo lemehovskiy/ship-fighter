@@ -1,8 +1,8 @@
 module.exports = {
     watch: true,
-    entry: './src/ship-fighter.es6',
+    entry: './src/Game.es6',
     output: {
-        filename: 'build/ship-fighter.js',
+        filename: 'build/shipFighter.js',
         libraryTarget: "umd"
     },
     module: {

@@ -1,12 +1,4 @@
-require("./sass/style.scss");
-
-require ("jquery");
-
-require('../build/ship_fighter.js');
+import ShipFighter from '../build/shipFighter';
 
 
-$(document).ready(function () {
-
-    $('.ship-fighter-demo').shipFighter();
-
-});
+let shipFighter = new ShipFighter();
