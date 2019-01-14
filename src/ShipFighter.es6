@@ -3,50 +3,41 @@ import Weapon from "./Weapon.es6";
 
 class ShipFighter {
 
-    constructor(game) {
-        let self = this;
+    constructor(args) {
+        this.shipColor = '#ffff11';
+        this.height = 25;
+        this.width = 20;
+        this.x = args.position.x;
+        this.y = args.position.y;
+        this.acceleration = 0;
+        this.create = args.create;
 
-        self.canvas = game.canvas;
-        self.ctx = game.ctx;
-
-        self.bullets = [];
-        self.shipColor = '#ffff11';
-        self.height = 25;
-        self.width = 20;
-        self.x = self.canvas.width / 2 + this.width / 2;
-        self.y = self.canvas.height - this.height;
-        self.acceleration = 0;
-
-
-        self.controls();
-
-        self.weapon = new Weapon(game, this);
+        this.controls();
+        this.weapon = new Weapon({
+            ship: this
+        });
     }
 
 
-    draw() {
-        let self = this;
+    render(state) {
+        const ctx = state.ctx;
 
-        self.ctx.beginPath();
-        self.ctx.moveTo(this.x + this.width / 2, this.y);
-        self.ctx.lineTo(this.x, this.y + this.height);
-        self.ctx.lineTo(this.x + this.width, this.y + this.height);
-        self.ctx.closePath();
-        self.ctx.fillStyle = self.shipColor;
-        self.ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width / 2, this.y);
+        ctx.lineTo(this.x, this.y + this.height);
+        ctx.lineTo(this.x + this.width, this.y + this.height);
+        ctx.closePath();
+        ctx.fillStyle = this.shipColor;
+        ctx.fill();
 
-        if (self.x < -self.width / 2 - +self.acceleration) {
-            self.x = -self.width / 2;
+        if (this.x < -this.width / 2 - +this.acceleration) {
+            this.x = -this.width / 2;
+        }
+        else if (this.x > state.screen.width - this.width / 2 + this.acceleration) {
+            this.x = state.screen.width - this.width / 2 + this.acceleration;
         }
 
-        else if (self.x > self.canvas.width - self.width / 2 + self.acceleration) {
-            self.x = self.canvas.width - self.width / 2 + self.acceleration;
-        }
-
-
-        self.x += self.acceleration;
-
-
+        this.x += this.acceleration;
     }
 
     stop() {
@@ -72,10 +63,12 @@ class ShipFighter {
     }
 
     shoot() {
-
-        let self = this;
-        self.weapon.shoot();
-
+        this.weapon.shoot({
+            position: {
+                x: this.x,
+                y: this.y
+            }
+        });
     }
 
 

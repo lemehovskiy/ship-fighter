@@ -9,65 +9,44 @@ import EnemyShip from "./EnemyShip.es6";
 class Game {
 
     constructor() {
-        let self = this;
 
-        self.canvas = document.getElementById("ship-fighter");
-        self.ctx = self.canvas.getContext("2d");
-        self.canvas.width = 600;
-        self.canvas.height = 500;
-        
-        self.shipFighter = new ShipFighter(this);
-        
-        self.enemies = [];
-        self.lives = 5;
-        self.score = 0;
-        init();
-
-        function init() {
-
-            draw();
-
-            self.createEnemies();
+        this.state = {
+            canvas: document.getElementById("ship-fighter"),
+            screen: {
+                width: 600,
+                height: 500
+            },
+            lives: 5,
+            score: 0
         }
 
+        this.state.ctx = this.state.canvas.getContext("2d");
+        this.state.canvas.width = this.state.screen.width;
+        this.state.canvas.height = this.state.screen.height;
 
-        function draw() {
-
-            self.ctx.fillStyle = "rgba(0,0,0,0.6)";
-            self.ctx.fillRect(0, 0, self.canvas.width, self.canvas.height);
-
-
-            self.shipFighter.draw();
-
-            // render_bullets();
-
-            renderEnemies();
+        this.shipFighters = [];
+        this.enemies = [];
+        this.bullets = [];
 
 
-            // updateLives();
-
-            // updateScore();
-
-            // if (self.lives == 0) {
-            //     restart();
-            // }
-
-            requestAnimationFrame(draw);
-        }
-
-        function renderEnemies() {
-
-            self.enemies.forEach(function (enemy, i) {
-                enemy.draw();
-
-                if (enemy.y > self.canvas.height) {
-                    self.enemies.splice(i, 1);
-                    self.lives--;
-
-                }
+        let shipFighter = new ShipFighter({
+                position: {
+                    x: this.state.canvas.width / 2,
+                    y: this.state.canvas.height - 25
+                },
+                create: this.createObject.bind(this)
             })
-        }
 
+
+        this.createObject(shipFighter, 'shipFighters');
+
+
+        this.createEnemies();
+
+        this.update();
+
+
+        
         // function render_bullets() {
         //     self.shipFighter.bullets.forEach(function (bullet, bullet_index) {
         //
@@ -144,11 +123,15 @@ class Game {
 
     }
 
+    createObject(item, group){
+        this[group].push(item);
+    }
+
     createEnemies() {
 
         let self = this;
 
-        let enemy = new EnemyShip(self.canvas, self.ctx);
+        let enemy = new EnemyShip(self.state.canvas);
         self.enemies.push(enemy);
 
         let emenies_interval = setInterval(function () {
@@ -157,12 +140,90 @@ class Game {
                 return;
             }
 
-            let enemy = new EnemyShip(self.canvas, self.ctx);
+            let enemy = new EnemyShip(self.state.canvas);
 
             self.enemies.push(enemy);
 
         }, 2000)
 
+
+    }
+
+    checkCollisionsWith(items1, items2) {
+        var a = items1.length - 1;
+        var b;
+        for(a; a > -1; --a){
+            b = items2.length - 1;
+            for(b; b > -1; --b){
+                var item1 = items1[a];
+                var item2 = items2[b];
+                if(this.checkCollision(item1, item2)){
+                    item1.destroy();
+                    item2.destroy();
+                }
+            }
+        }
+    }
+
+    checkCollision(obj1, obj2){
+        var vx = obj1.position.x - obj2.position.x;
+        var vy = obj1.position.y - obj2.position.y;
+        var length = Math.sqrt(vx * vx + vy * vy);
+        if(length < obj1.radius + obj2.radius){
+            return true;
+        }
+        return false;
+    }
+
+    updateObjects(items, group){
+
+        let index = 0;
+        for (let item of items) {
+            if (item.delete) {
+                this[group].splice(index, 1);
+            }else{
+                items[index].render(this.state);
+            }
+            index++;
+        }
+    }
+
+    update() {
+
+        this.state.ctx.fillStyle = "rgba(0,0,0,0.6)";
+        this.state.ctx.fillRect(0, 0, this.state.screen.width, this.state.screen.height);
+
+
+        // self.shipFighter.draw();
+
+        // render_bullets();
+
+        // updateLives();
+
+        // updateScore();
+
+        // if (self.lives == 0) {
+        //     restart();
+        // }
+
+        // this.checkCollisionsWith(this.bullets, this.asteroids);
+        // this.checkCollisionsWith(this.ship, this.asteroids);
+
+        // Remove or render
+        // this.updateObjects(this.particles, 'particles')
+        // this.updateObjects(this.asteroids, 'asteroids')
+        this.updateObjects(this.bullets, 'bullets')
+        this.updateObjects(this.shipFighters, 'shipFighters')
+        //
+        //
+        // this.enemies.forEach(function(enemy){
+        //     // console.log(enemy);
+        //
+        //     // console.log(self.ctx);
+        //     enemy.render(this.state.ctx.bind(this));
+        // })
+        //
+        requestAnimationFrame(this.update.bind(this));
 
     }
 }

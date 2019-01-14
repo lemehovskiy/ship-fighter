@@ -1,31 +1,23 @@
 class Bullet {
-    constructor(game, ship) {
-        let self = this;
-
-        self.ctx = game.ctx;
-        self.canvas = game.canvas;
-        self.x = ship.x;
-        self.y = ship.y;
-        self.size = 2;
-
-        self.color = "#ffffff";
-
-        self.parts = [];
-
-        self.exploded = false;
+    constructor(args) {
+        this.x = args.position.x;
+        this.y = args.position.y;
+        this.size = 2;
+        this.color = "#ffffff";
+        this.parts = [];
+        this.exploded = false;
     }
-    
-    draw() {
-        let self = this;
 
-        self.y -= 3;
+    render(state) {
+        const ctx = state.ctx;
+        this.y -= 3;
 
-        self.ctx.beginPath();
-        self.ctx.arc(self.x, self.y, self.size, 0, 2 * Math.PI);
-        self.ctx.closePath();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+        ctx.closePath();
 
-        self.ctx.fillStyle = self.color;
-        self.ctx.fill();
+        ctx.fillStyle = this.color;
+        ctx.fill();
     }
 }
 

@@ -2,28 +2,25 @@ var _ = require('lodash');
 import Part from "./Part.es6";
 
 class EnemyShip {
-    constructor(canvas, ctx) {
-
+    constructor(canvas) {
         let self = this;
 
-
-        self.canvas = canvas;
-        self.ctx = ctx;
-
+        self.exploded = false;
         self.width = 10;
         self.height = 20;
 
         self.color = "#FF0000";
 
-        self.x = _.random(0, self.canvas.width - self.width);
+        self.x = _.random(0, canvas.width - self.width);
         self.y = -self.height;
+
     }
 
     explode(){
+        console.log('enemyExplode');
 
-        let self = this;
-
-        self.exploded = true;
+        let self = this,
+            parts = [];
 
         let poolRadius = 500;
 
@@ -39,11 +36,18 @@ class EnemyShip {
                 move_to_y: Math.sin(angle) * radius + self.y
             });
 
-            self.parts.push(part);
+            parts.push(part);
         }
+
+        self.exploded = true;
+
+        console.log(parts);
+        console.log(self.exploded);
     }
 
-    draw_parts() {
+    drawExplode() {
+
+        console.log('draw parts');
 
         let self = this;
 
@@ -56,16 +60,41 @@ class EnemyShip {
         })
     }
 
-    draw() {
+    // renderEnemies() {
+    //     self.enemies.forEach(function (enemy, i) {
+    //         enemy.draw();
+    //
+    //         if (enemy.y > self.canvas.height) {
+    //             self.enemies.splice(i, 1);
+    //             self.lives--;
+    //
+    //         }
+    //     })
+    // }
 
-        let self = this;
+    render(ctx){
+        this.y++;
+        this.draw(ctx);
+    }
 
-        self.ctx.beginPath();
-        self.ctx.rect(self.x, self.y++, self.width, self.height);
-        self.ctx.closePath();
+    draw(state) {
 
-        self.ctx.fillStyle = self.color;
-        self.ctx.fill();
+        const ctx = state.ctx;
+
+        ctx.beginPath();
+        ctx.rect(this.x, this.y, this.width, this.height);
+        ctx.closePath();
+
+        ctx.fillStyle = this.color;
+        ctx.fill();
+
+
+        // if (self.exploded){
+        //     console.log('asdf');
+        //     self.drawExplode()
+        // }
+        //
+        // requestAnimationFrame(self.draw.bind(this));
     }
 }
 

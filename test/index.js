@@ -3024,60 +3024,37 @@ var Game = function () {
     function Game() {
         _classCallCheck(this, Game);
 
-        var self = this;
+        this.state = {
+            canvas: document.getElementById("ship-fighter"),
+            screen: {
+                width: 600,
+                height: 500
+            },
+            lives: 5,
+            score: 0
+        };
 
-        self.canvas = document.getElementById("ship-fighter");
-        self.ctx = self.canvas.getContext("2d");
-        self.canvas.width = 600;
-        self.canvas.height = 500;
+        this.state.ctx = this.state.canvas.getContext("2d");
+        this.state.canvas.width = this.state.screen.width;
+        this.state.canvas.height = this.state.screen.height;
 
-        self.shipFighter = new _ShipFighter2.default(this);
+        this.shipFighters = [];
+        this.enemies = [];
+        this.bullets = [];
 
-        self.enemies = [];
-        self.lives = 5;
-        self.score = 0;
-        init();
+        var shipFighter = new _ShipFighter2.default({
+            position: {
+                x: this.state.canvas.width / 2,
+                y: this.state.canvas.height - 25
+            },
+            create: this.createObject.bind(this)
+        });
 
-        function init() {
+        this.createObject(shipFighter, 'shipFighters');
 
-            draw();
+        this.createEnemies();
 
-            self.createEnemies();
-        }
-
-        function draw() {
-
-            self.ctx.fillStyle = "rgba(0,0,0,0.6)";
-            self.ctx.fillRect(0, 0, self.canvas.width, self.canvas.height);
-
-            self.shipFighter.draw();
-
-            // render_bullets();
-
-            renderEnemies();
-
-            // updateLives();
-
-            // updateScore();
-
-            // if (self.lives == 0) {
-            //     restart();
-            // }
-
-            requestAnimationFrame(draw);
-        }
-
-        function renderEnemies() {
-
-            self.enemies.forEach(function (enemy, i) {
-                enemy.draw();
-
-                if (enemy.y > self.canvas.height) {
-                    self.enemies.splice(i, 1);
-                    self.lives--;
-                }
-            });
-        }
+        this.update();
 
         // function render_bullets() {
         //     self.shipFighter.bullets.forEach(function (bullet, bullet_index) {
@@ -3153,12 +3130,17 @@ var Game = function () {
     }
 
     _createClass(Game, [{
+        key: "createObject",
+        value: function createObject(item, group) {
+            this[group].push(item);
+        }
+    }, {
         key: "createEnemies",
         value: function createEnemies() {
 
             var self = this;
 
-            var enemy = new _EnemyShip2.default(self.canvas, self.ctx);
+            var enemy = new _EnemyShip2.default(self.state.canvas);
             self.enemies.push(enemy);
 
             var emenies_interval = setInterval(function () {
@@ -3167,10 +3149,111 @@ var Game = function () {
                     return;
                 }
 
-                var enemy = new _EnemyShip2.default(self.canvas, self.ctx);
+                var enemy = new _EnemyShip2.default(self.state.canvas);
 
                 self.enemies.push(enemy);
             }, 2000);
+        }
+    }, {
+        key: "checkCollisionsWith",
+        value: function checkCollisionsWith(items1, items2) {
+            var a = items1.length - 1;
+            var b;
+            for (a; a > -1; --a) {
+                b = items2.length - 1;
+                for (b; b > -1; --b) {
+                    var item1 = items1[a];
+                    var item2 = items2[b];
+                    if (this.checkCollision(item1, item2)) {
+                        item1.destroy();
+                        item2.destroy();
+                    }
+                }
+            }
+        }
+    }, {
+        key: "checkCollision",
+        value: function checkCollision(obj1, obj2) {
+            var vx = obj1.position.x - obj2.position.x;
+            var vy = obj1.position.y - obj2.position.y;
+            var length = Math.sqrt(vx * vx + vy * vy);
+            if (length < obj1.radius + obj2.radius) {
+                return true;
+            }
+            return false;
+        }
+    }, {
+        key: "updateObjects",
+        value: function updateObjects(items, group) {
+
+            var index = 0;
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+                for (var _iterator = items[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var item = _step.value;
+
+                    if (item.delete) {
+                        this[group].splice(index, 1);
+                    } else {
+                        items[index].render(this.state);
+                    }
+                    index++;
+                }
+            } catch (err) {
+                _didIteratorError = true;
+                _iteratorError = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion && _iterator.return) {
+                        _iterator.return();
+                    }
+                } finally {
+                    if (_didIteratorError) {
+                        throw _iteratorError;
+                    }
+                }
+            }
+        }
+    }, {
+        key: "update",
+        value: function update() {
+
+            this.state.ctx.fillStyle = "rgba(0,0,0,0.6)";
+            this.state.ctx.fillRect(0, 0, this.state.screen.width, this.state.screen.height);
+
+            // self.shipFighter.draw();
+
+            // render_bullets();
+
+            // updateLives();
+
+            // updateScore();
+
+            // if (self.lives == 0) {
+            //     restart();
+            // }
+
+            // this.checkCollisionsWith(this.bullets, this.asteroids);
+            // this.checkCollisionsWith(this.ship, this.asteroids);
+
+            // Remove or render
+            // this.updateObjects(this.particles, 'particles')
+            // this.updateObjects(this.asteroids, 'asteroids')
+            this.updateObjects(this.bullets, 'bullets');
+            this.updateObjects(this.shipFighters, 'shipFighters');
+            //
+            //
+            // this.enemies.forEach(function(enemy){
+            //     // console.log(enemy);
+            //
+            //     // console.log(self.ctx);
+            //     enemy.render(this.state.ctx.bind(this));
+            // })
+            //
+            requestAnimationFrame(this.update.bind(this));
         }
     }]);
 
@@ -3203,47 +3286,43 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var ShipFighter = function () {
-    function ShipFighter(game) {
+    function ShipFighter(args) {
         _classCallCheck(this, ShipFighter);
 
-        var self = this;
+        this.shipColor = '#ffff11';
+        this.height = 25;
+        this.width = 20;
+        this.x = args.position.x;
+        this.y = args.position.y;
+        this.acceleration = 0;
+        this.create = args.create;
 
-        self.canvas = game.canvas;
-        self.ctx = game.ctx;
-
-        self.bullets = [];
-        self.shipColor = '#ffff11';
-        self.height = 25;
-        self.width = 20;
-        self.x = self.canvas.width / 2 + this.width / 2;
-        self.y = self.canvas.height - this.height;
-        self.acceleration = 0;
-
-        self.controls();
-
-        self.weapon = new _Weapon2.default(game, this);
+        this.controls();
+        this.weapon = new _Weapon2.default({
+            ship: this
+        });
     }
 
     _createClass(ShipFighter, [{
-        key: "draw",
-        value: function draw() {
-            var self = this;
+        key: "render",
+        value: function render(state) {
+            var ctx = state.ctx;
 
-            self.ctx.beginPath();
-            self.ctx.moveTo(this.x + this.width / 2, this.y);
-            self.ctx.lineTo(this.x, this.y + this.height);
-            self.ctx.lineTo(this.x + this.width, this.y + this.height);
-            self.ctx.closePath();
-            self.ctx.fillStyle = self.shipColor;
-            self.ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.width / 2, this.y);
+            ctx.lineTo(this.x, this.y + this.height);
+            ctx.lineTo(this.x + this.width, this.y + this.height);
+            ctx.closePath();
+            ctx.fillStyle = this.shipColor;
+            ctx.fill();
 
-            if (self.x < -self.width / 2 - +self.acceleration) {
-                self.x = -self.width / 2;
-            } else if (self.x > self.canvas.width - self.width / 2 + self.acceleration) {
-                self.x = self.canvas.width - self.width / 2 + self.acceleration;
+            if (this.x < -this.width / 2 - +this.acceleration) {
+                this.x = -this.width / 2;
+            } else if (this.x > state.screen.width - this.width / 2 + this.acceleration) {
+                this.x = state.screen.width - this.width / 2 + this.acceleration;
             }
 
-            self.x += self.acceleration;
+            this.x += this.acceleration;
         }
     }, {
         key: "stop",
@@ -3267,9 +3346,12 @@ var ShipFighter = function () {
     }, {
         key: "shoot",
         value: function shoot() {
-
-            var self = this;
-            self.weapon.shoot();
+            this.weapon.shoot({
+                position: {
+                    x: this.x,
+                    y: this.y
+                }
+            });
         }
     }, {
         key: "controls",
@@ -8804,74 +8886,73 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Weapon = function () {
-    function Weapon(game, ship) {
+    function Weapon(args) {
         _classCallCheck(this, Weapon);
 
-        var self = this;
-
-        self.ship = ship;
-
-        self.game = game;
-
-        self.x = self.ship.x;
-        self.y = self.ship.y;
-
-        self.canvas = game.canvas;
-        self.ctx = game.ctx;
-
-        self.bullets = [];
-
-        this.draw();
+        this.create = args.ship.create;
     }
 
     _createClass(Weapon, [{
         key: "shoot",
-        value: function shoot() {
-            var self = this;
-            var bullet = new _Bullet2.default(self.game, self.ship);
-            this.bullets.push(bullet);
-        }
-    }, {
-        key: "draw",
-        value: function draw() {
-            this.drawBullets();
-            requestAnimationFrame(this.draw.bind(this));
-        }
-    }, {
-        key: "drawBullets",
-        value: function drawBullets() {
-            var self = this;
-
-            self.bullets.forEach(function (bullet, bulletIndex) {
-
-                if (bullet.exploded) {
-                    bullet.draw_parts();
-
-                    if (bullet.parts.length == 0) {
-                        self.bullets.splice(bulletIndex, 1);
-                    }
-                } else {
-                    bullet.draw();
-
-                    self.game.enemies.forEach(function (enemy, enemyIndex) {
-                        if (bullet.x > enemy.x && bullet.x < enemy.x + enemy.width && bullet.y <= enemy.y + enemy.height && bullet.y > enemy.y) {
-
-                            enemy.explode();
-
-                            self.game.enemies.splice(enemyIndex, 1);
-
-                            self.score += 10;
-
-                            // updateScore();
-                        }
-                    });
-                }
-
-                if (bullet.y < 0) {
-                    self.bullets.splice(bulletIndex, 1);
+        value: function shoot(args) {
+            var bullet = new _Bullet2.default({
+                position: {
+                    x: args.position.x,
+                    y: args.position.y
                 }
             });
+
+            this.create(bullet, 'bullets');
         }
+
+        // draw() {
+        //     this.drawBullets();
+        //     requestAnimationFrame(this.draw.bind(this));
+        // }
+        //
+        // drawBullets() {
+        //     let self = this;
+        //
+        //     self.bullets.forEach(function (bullet, bulletIndex) {
+        //
+        //         if (bullet.exploded) {
+        //             bullet.draw_parts();
+        //
+        //             if (bullet.parts.length == 0) {
+        //                 self.bullets.splice(bulletIndex, 1);
+        //             }
+        //         }
+        //         else {
+        //             bullet.draw();
+        //
+        //             self.game.enemies.forEach(function (enemy, enemyIndex) {
+        //                 if (
+        //                     bullet.x > enemy.x &&
+        //                     bullet.x < enemy.x + enemy.width &&
+        //                     bullet.y <= enemy.y + enemy.height &&
+        //                     bullet.y > enemy.y
+        //
+        //                 ) {
+        //
+        //                     enemy.explode();
+        //
+        //                     self.game.enemies.splice(enemyIndex, 1);
+        //
+        //                     self.score += 10;
+        //
+        //                     // updateScore();
+        //                 }
+        //             });
+        //         }
+        //
+        //
+        //         if (bullet.y < 0) {
+        //             self.bullets.splice(bulletIndex, 1);
+        //         }
+        //     });
+        //
+        // }
+
     }]);
 
     return Weapon;
@@ -8895,37 +8976,29 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Bullet = function () {
-    function Bullet(game, ship) {
+    function Bullet(args) {
         _classCallCheck(this, Bullet);
 
-        var self = this;
-
-        self.ctx = game.ctx;
-        self.canvas = game.canvas;
-        self.x = ship.x;
-        self.y = ship.y;
-        self.size = 2;
-
-        self.color = "#ffffff";
-
-        self.parts = [];
-
-        self.exploded = false;
+        this.x = args.position.x;
+        this.y = args.position.y;
+        this.size = 2;
+        this.color = "#ffffff";
+        this.parts = [];
+        this.exploded = false;
     }
 
     _createClass(Bullet, [{
-        key: "draw",
-        value: function draw() {
-            var self = this;
+        key: "render",
+        value: function render(state) {
+            var ctx = state.ctx;
+            this.y -= 3;
 
-            self.y -= 3;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+            ctx.closePath();
 
-            self.ctx.beginPath();
-            self.ctx.arc(self.x, self.y, self.size, 0, 2 * Math.PI);
-            self.ctx.closePath();
-
-            self.ctx.fillStyle = self.color;
-            self.ctx.fill();
+            ctx.fillStyle = this.color;
+            ctx.fill();
         }
     }]);
 
@@ -8947,7 +9020,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _Part = __webpack_require__(20);
+var _Part = __webpack_require__(18);
 
 var _Part2 = _interopRequireDefault(_Part);
 
@@ -8955,33 +9028,31 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var _ = __webpack_require__(18);
+var _ = __webpack_require__(19);
 
 var EnemyShip = function () {
-    function EnemyShip(canvas, ctx) {
+    function EnemyShip(canvas) {
         _classCallCheck(this, EnemyShip);
 
         var self = this;
 
-        self.canvas = canvas;
-        self.ctx = ctx;
-
+        self.exploded = false;
         self.width = 10;
         self.height = 20;
 
         self.color = "#FF0000";
 
-        self.x = _.random(0, self.canvas.width - self.width);
+        self.x = _.random(0, canvas.width - self.width);
         self.y = -self.height;
     }
 
     _createClass(EnemyShip, [{
         key: "explode",
         value: function explode() {
+            console.log('enemyExplode');
 
-            var self = this;
-
-            self.exploded = true;
+            var self = this,
+                parts = [];
 
             var poolRadius = 500;
 
@@ -8997,12 +9068,19 @@ var EnemyShip = function () {
                     move_to_y: Math.sin(angle) * radius + self.y
                 });
 
-                self.parts.push(part);
+                parts.push(part);
             }
+
+            self.exploded = true;
+
+            console.log(parts);
+            console.log(self.exploded);
         }
     }, {
-        key: "draw_parts",
-        value: function draw_parts() {
+        key: "drawExplode",
+        value: function drawExplode() {
+
+            console.log('draw parts');
 
             var self = this;
 
@@ -9014,18 +9092,44 @@ var EnemyShip = function () {
                 }
             });
         }
+
+        // renderEnemies() {
+        //     self.enemies.forEach(function (enemy, i) {
+        //         enemy.draw();
+        //
+        //         if (enemy.y > self.canvas.height) {
+        //             self.enemies.splice(i, 1);
+        //             self.lives--;
+        //
+        //         }
+        //     })
+        // }
+
+    }, {
+        key: "render",
+        value: function render(ctx) {
+            this.y++;
+            this.draw(ctx);
+        }
     }, {
         key: "draw",
-        value: function draw() {
+        value: function draw(state) {
 
-            var self = this;
+            var ctx = state.ctx;
 
-            self.ctx.beginPath();
-            self.ctx.rect(self.x, self.y++, self.width, self.height);
-            self.ctx.closePath();
+            ctx.beginPath();
+            ctx.rect(this.x, this.y, this.width, this.height);
+            ctx.closePath();
 
-            self.ctx.fillStyle = self.color;
-            self.ctx.fill();
+            ctx.fillStyle = this.color;
+            ctx.fill();
+
+            // if (self.exploded){
+            //     console.log('asdf');
+            //     self.drawExplode()
+            // }
+            //
+            // requestAnimationFrame(self.draw.bind(this));
         }
     }]);
 
@@ -9036,6 +9140,63 @@ exports.default = EnemyShip;
 
 /***/ }),
 /* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Part = function () {
+    function Part(options) {
+        _classCallCheck(this, Part);
+
+        var self = this;
+
+        self.width = 5;
+        self.height = 5;
+
+        self.color = "#FF0000";
+
+        self.x = options.x;
+        self.y = options.y;
+
+        TweenMax.to(self, 2, { x: options.move_to_x });
+        TweenMax.to(self, 2, { y: options.move_to_y });
+
+        self.life = 5;
+    }
+
+    _createClass(Part, [{
+        key: "draw",
+        value: function draw() {
+
+            var self = this;
+
+            self.life -= 0.4;
+
+            ctx.beginPath();
+            ctx.rect(self.x, self.y, self.width, self.height);
+            ctx.closePath();
+
+            ctx.fillStyle = self.color;
+            ctx.fill();
+        }
+    }]);
+
+    return Part;
+}();
+
+exports.default = Part;
+
+/***/ }),
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;/**
@@ -26147,10 +26308,10 @@ exports.default = EnemyShip;
   }
 }.call(this));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(19)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(20)(module)))
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports) {
 
 module.exports = function(module) {
@@ -26176,63 +26337,6 @@ module.exports = function(module) {
 	return module;
 };
 
-
-/***/ }),
-/* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Part = function () {
-    function Part(options) {
-        _classCallCheck(this, Part);
-
-        var self = this;
-
-        self.width = 5;
-        self.height = 5;
-
-        self.color = "#FF0000";
-
-        self.x = options.x;
-        self.y = options.y;
-
-        TweenMax.to(self, 2, { x: options.move_to_x });
-        TweenMax.to(self, 2, { y: options.move_to_y });
-
-        self.life = 5;
-    }
-
-    _createClass(Part, [{
-        key: "draw",
-        value: function draw() {
-
-            var self = this;
-
-            self.life -= 0.4;
-
-            ctx.beginPath();
-            ctx.rect(self.x, self.y, self.width, self.height);
-            ctx.closePath();
-
-            ctx.fillStyle = self.color;
-            ctx.fill();
-        }
-    }]);
-
-    return Part;
-}();
-
-exports.default = Part;
 
 /***/ })
 /******/ ]);
