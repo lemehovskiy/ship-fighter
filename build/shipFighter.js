@@ -2924,6 +2924,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var KEY = {
+    LEFT: 37,
+    RIGHT: 39,
+    SPACE: 32
+};
+
 'use strict';
 
 var Game = function () {
@@ -2937,7 +2943,12 @@ var Game = function () {
                 height: 500
             },
             lives: 5,
-            score: 0
+            score: 0,
+            keys: {
+                left: 0,
+                right: 0,
+                space: 0
+            }
         };
 
         this.state.ctx = this.state.canvas.getContext("2d");
@@ -2961,6 +2972,9 @@ var Game = function () {
         this.createEnemies();
 
         this.update();
+
+        window.addEventListener('keyup', this.handleKeys.bind(this, false));
+        window.addEventListener('keydown', this.handleKeys.bind(this, true));
 
         // function render_bullets() {
         //     self.shipFighter.bullets.forEach(function (bullet, bullet_index) {
@@ -3036,6 +3050,15 @@ var Game = function () {
     }
 
     _createClass(Game, [{
+        key: "handleKeys",
+        value: function handleKeys(value, e) {
+            var keys = this.state.keys;
+            if (e.keyCode === KEY.LEFT) keys.left = value;
+            if (e.keyCode === KEY.RIGHT) keys.right = value;
+            if (e.keyCode === KEY.SPACE) keys.space = value;
+            this.state.keys = keys;
+        }
+    }, {
         key: "createObject",
         value: function createObject(item, group) {
             this[group].push(item);
@@ -3043,7 +3066,6 @@ var Game = function () {
     }, {
         key: "createEnemies",
         value: function createEnemies() {
-
             var self = this;
 
             var enemy = new _EnemyShip2.default(self.state.canvas);
@@ -3198,55 +3220,82 @@ var ShipFighter = function () {
         this.shipColor = '#ffff11';
         this.height = 25;
         this.width = 20;
-        this.x = args.position.x;
-        this.y = args.position.y;
-        this.acceleration = 0;
+        this.position = {
+            x: args.position.x,
+            y: args.position.y
+        };
+        this.velocity = {
+            x: 0
+        };
+
+        this.maxVelocity = 5;
+
+        this.speed = 0.25;
+        this.inertia = 0.90;
         this.create = args.create;
 
-        this.controls();
         this.weapon = new _Weapon2.default({
             ship: this
         });
+
+        console.log(this.velocity);
     }
 
     _createClass(ShipFighter, [{
         key: "render",
         value: function render(state) {
+            if (state.keys.left) {
+                this.move('LEFT');
+            }
+            if (state.keys.right) {
+                this.move('RIGHT');
+            }
+            if (state.keys.space) {
+                this.shoot();
+            }
+
             var ctx = state.ctx;
 
             ctx.beginPath();
-            ctx.moveTo(this.x + this.width / 2, this.y);
-            ctx.lineTo(this.x, this.y + this.height);
-            ctx.lineTo(this.x + this.width, this.y + this.height);
+            ctx.moveTo(this.position.x + this.width / 2, this.position.y);
+            ctx.lineTo(this.position.x, this.position.y + this.height);
+            ctx.lineTo(this.position.x + this.width, this.position.y + this.height);
             ctx.closePath();
             ctx.fillStyle = this.shipColor;
             ctx.fill();
 
-            if (this.x < -this.width / 2 - +this.acceleration) {
-                this.x = -this.width / 2;
-            } else if (this.x > state.screen.width - this.width / 2 + this.acceleration) {
-                this.x = state.screen.width - this.width / 2 + this.acceleration;
+            if (!(this.velocity.x < 0.001 && this.velocity.x > -0.001)) {
+                this.position.x += this.velocity.x;
+                this.velocity.x *= this.inertia;
             }
-
-            this.x += this.acceleration;
         }
-    }, {
-        key: "stop",
-        value: function stop() {
 
-            var self = this;
-            _TweenMax.TweenMax.to(self, 0.5, { acceleration: 0 });
+        // stop() {
+        //
+        //     let self = this;
+        //     TweenMax.to(self, 0.5, {velocity: 0});
+        //
+        // }
+
+    }, {
+        key: "accelerate",
+        value: function accelerate(direction) {
+
+            console.log(this.velocity.x);
+
+            if (direction == "LEFT" && this.velocity.x > -this.maxVelocity) {
+                this.velocity.x -= 1;
+            } else if (direction == 'RIGHT' && this.velocity.x < this.maxVelocity) {
+                this.velocity.x += 1;
+            }
         }
     }, {
         key: "move",
         value: function move(direction) {
-
-            var self = this;
-
-            if (direction == 'left') {
-                _TweenMax.TweenMax.to(self, 1, { acceleration: -5 });
-            } else if (direction == 'right') {
-                _TweenMax.TweenMax.to(self, 1, { acceleration: 5 });
+            if (direction == 'LEFT') {
+                this.accelerate('LEFT');
+            } else if (direction == 'RIGHT') {
+                this.accelerate('RIGHT');
             }
         }
     }, {
@@ -3254,37 +3303,38 @@ var ShipFighter = function () {
         value: function shoot() {
             this.weapon.shoot({
                 position: {
-                    x: this.x,
-                    y: this.y
+                    x: this.position.x,
+                    y: this.position.y
                 }
             });
         }
-    }, {
-        key: "controls",
-        value: function controls() {
-            var self = this;
-            document.addEventListener("keydown", function (e) {
 
-                switch (e.keyCode) {
-                    case 37:
-                        self.move('left');
-                        break;
-                    case 39:
-                        self.move('right');
-                        break;
-                    case 32:
-                        self.shoot();
-                        break;
-                }
-            });
+        // controls() {
+        //     let self = this;
+        //     document.addEventListener("keydown", function (e) {
+        //
+        //         switch (e.keyCode) {
+        //             case 37:
+        //                 self.move('left');
+        //                 break;
+        //             case 39:
+        //                 self.move('right');
+        //                 break;
+        //             case 32:
+        //                 self.shoot();
+        //                 break;
+        //         }
+        //     });
+        //
+        //     document.addEventListener("keyup", function (e) {
+        //
+        //         if (e.keyCode == 37 || e.keyCode == 39) {
+        //             self.stop();
+        //         }
+        //
+        //     });
+        // }
 
-            document.addEventListener("keyup", function (e) {
-
-                if (e.keyCode == 37 || e.keyCode == 39) {
-                    self.stop();
-                }
-            });
-        }
     }]);
 
     return ShipFighter;
@@ -8796,11 +8846,18 @@ var Weapon = function () {
         _classCallCheck(this, Weapon);
 
         this.create = args.ship.create;
+        this.roundsPerMinute = 1000;
+
+        this.state = {
+            lastShot: 0
+        };
     }
 
     _createClass(Weapon, [{
         key: "shoot",
         value: function shoot(args) {
+            if (!(Date.now() - this.state.lastShot > 60 / this.roundsPerMinute * 1000)) return;
+
             var bullet = new _Bullet2.default({
                 position: {
                     x: args.position.x,
@@ -8809,56 +8866,9 @@ var Weapon = function () {
             });
 
             this.create(bullet, 'bullets');
+
+            this.state.lastShot = new Date();
         }
-
-        // draw() {
-        //     this.drawBullets();
-        //     requestAnimationFrame(this.draw.bind(this));
-        // }
-        //
-        // drawBullets() {
-        //     let self = this;
-        //
-        //     self.bullets.forEach(function (bullet, bulletIndex) {
-        //
-        //         if (bullet.exploded) {
-        //             bullet.draw_parts();
-        //
-        //             if (bullet.parts.length == 0) {
-        //                 self.bullets.splice(bulletIndex, 1);
-        //             }
-        //         }
-        //         else {
-        //             bullet.draw();
-        //
-        //             self.game.enemies.forEach(function (enemy, enemyIndex) {
-        //                 if (
-        //                     bullet.x > enemy.x &&
-        //                     bullet.x < enemy.x + enemy.width &&
-        //                     bullet.y <= enemy.y + enemy.height &&
-        //                     bullet.y > enemy.y
-        //
-        //                 ) {
-        //
-        //                     enemy.explode();
-        //
-        //                     self.game.enemies.splice(enemyIndex, 1);
-        //
-        //                     self.score += 10;
-        //
-        //                     // updateScore();
-        //                 }
-        //             });
-        //         }
-        //
-        //
-        //         if (bullet.y < 0) {
-        //             self.bullets.splice(bulletIndex, 1);
-        //         }
-        //     });
-        //
-        // }
-
     }]);
 
     return Weapon;

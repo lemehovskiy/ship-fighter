@@ -7,96 +7,120 @@ class ShipFighter {
         this.shipColor = '#ffff11';
         this.height = 25;
         this.width = 20;
-        this.x = args.position.x;
-        this.y = args.position.y;
-        this.acceleration = 0;
+        this.position = {
+            x: args.position.x,
+            y: args.position.y
+        };
+        this.velocity = {
+            x: 0
+        };
+
+        this.maxVelocity = 5;
+
+        this.speed = 0.25;
+        this.inertia = 0.90;
         this.create = args.create;
 
-        this.controls();
         this.weapon = new Weapon({
             ship: this
         });
+
+        console.log(this.velocity);
     }
 
 
     render(state) {
+        if(state.keys.left){
+            this.move('LEFT');
+        }
+        if(state.keys.right){
+            this.move('RIGHT');
+        }
+        if(state.keys.space) {
+            this.shoot();
+        }
+
         const ctx = state.ctx;
 
         ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2, this.y);
-        ctx.lineTo(this.x, this.y + this.height);
-        ctx.lineTo(this.x + this.width, this.y + this.height);
+        ctx.moveTo(this.position.x + this.width / 2, this.position.y);
+        ctx.lineTo(this.position.x, this.position.y + this.height);
+        ctx.lineTo(this.position.x + this.width, this.position.y + this.height);
         ctx.closePath();
         ctx.fillStyle = this.shipColor;
         ctx.fill();
 
-        if (this.x < -this.width / 2 - +this.acceleration) {
-            this.x = -this.width / 2;
-        }
-        else if (this.x > state.screen.width - this.width / 2 + this.acceleration) {
-            this.x = state.screen.width - this.width / 2 + this.acceleration;
-        }
 
-        this.x += this.acceleration;
+        if (!(this.velocity.x < 0.001 && this.velocity.x > -0.001)) {
+            this.position.x += this.velocity.x;
+            this.velocity.x *= this.inertia;
+        }
     }
 
-    stop() {
+    // stop() {
+    //
+    //     let self = this;
+    //     TweenMax.to(self, 0.5, {velocity: 0});
+    //
+    // }
 
-        let self = this;
-        TweenMax.to(self, 0.5, {acceleration: 0});
+    accelerate(direction){
 
+        console.log(this.velocity.x);
+
+
+        if (direction == "LEFT" && this.velocity.x > -this.maxVelocity) {
+            this.velocity.x -= 1;
+        }
+        else if (direction == 'RIGHT' && this.velocity.x < this.maxVelocity) {
+            this.velocity.x += 1;
+        }
     }
 
     move(direction) {
-
-        let self = this;
-
-
-        if (direction == 'left') {
-            TweenMax.to(self, 1, {acceleration: -5});
+        if (direction == 'LEFT') {
+            this.accelerate('LEFT');
         }
 
-        else if (direction == 'right') {
-            TweenMax.to(self, 1, {acceleration: 5});
+        else if (direction == 'RIGHT') {
+            this.accelerate('RIGHT');
         }
-
     }
 
     shoot() {
         this.weapon.shoot({
             position: {
-                x: this.x,
-                y: this.y
+                x: this.position.x,
+                y: this.position.y
             }
         });
     }
 
-
-    controls() {
-        let self = this;
-        document.addEventListener("keydown", function (e) {
-
-            switch (e.keyCode) {
-                case 37:
-                    self.move('left');
-                    break;
-                case 39:
-                    self.move('right');
-                    break;
-                case 32:
-                    self.shoot();
-                    break;
-            }
-        });
-
-        document.addEventListener("keyup", function (e) {
-
-            if (e.keyCode == 37 || e.keyCode == 39) {
-                self.stop();
-            }
-
-        });
-    }
+    // controls() {
+    //     let self = this;
+    //     document.addEventListener("keydown", function (e) {
+    //
+    //         switch (e.keyCode) {
+    //             case 37:
+    //                 self.move('left');
+    //                 break;
+    //             case 39:
+    //                 self.move('right');
+    //                 break;
+    //             case 32:
+    //                 self.shoot();
+    //                 break;
+    //         }
+    //     });
+    //
+    //     document.addEventListener("keyup", function (e) {
+    //
+    //         if (e.keyCode == 37 || e.keyCode == 39) {
+    //             self.stop();
+    //         }
+    //
+    //     });
+    // }
 }
 
 export default ShipFighter;

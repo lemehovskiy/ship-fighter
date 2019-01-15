@@ -3,6 +3,11 @@
 import ShipFighter from "./ShipFighter.es6";
 import EnemyShip from "./EnemyShip.es6";
 
+const KEY = {
+    LEFT:  37,
+    RIGHT: 39,
+    SPACE: 32
+};
 
 'use strict';
 
@@ -17,7 +22,12 @@ class Game {
                 height: 500
             },
             lives: 5,
-            score: 0
+            score: 0,
+            keys: {
+                left  : 0,
+                right : 0,
+                space : 0
+            }
         }
 
         this.state.ctx = this.state.canvas.getContext("2d");
@@ -44,6 +54,9 @@ class Game {
         this.createEnemies();
 
         this.update();
+
+        window.addEventListener('keyup',   this.handleKeys.bind(this, false));
+        window.addEventListener('keydown', this.handleKeys.bind(this, true));
 
 
         
@@ -123,12 +136,20 @@ class Game {
 
     }
 
+
+    handleKeys(value, e){
+        let keys = this.state.keys;
+        if(e.keyCode === KEY.LEFT ) keys.left  = value;
+        if(e.keyCode === KEY.RIGHT) keys.right = value;
+        if(e.keyCode === KEY.SPACE) keys.space = value;
+        this.state.keys = keys;
+    }
+
     createObject(item, group){
         this[group].push(item);
     }
 
     createEnemies() {
-
         let self = this;
 
         let enemy = new EnemyShip(self.state.canvas);
