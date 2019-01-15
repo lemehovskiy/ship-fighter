@@ -3,17 +3,28 @@ import Part from "./Part.es6";
 
 class EnemyShip {
     constructor(args) {
-        this.width = 10;
-        this.height = 20;
         this.exploded = false;
         this.color = "#FF0000";
+        this.collisionType = 'rect';
+        this.delete = false;
 
         this.state = {
             position: {
-                x: _.random(0, args.screen.width - this.width),
-                y: -this.height
+                x: 0,
+                y: 0
+            },
+            size: {
+                width: 10,
+                height: 20
             }
         }
+
+        this.state.position.x = _.random(0, args.screen.width - this.state.size.width);
+        this.state.position.y = -this.state.size.height;
+    }
+
+    destroy(){
+        this.delete = true;
     }
 
     explode(){
@@ -82,7 +93,7 @@ class EnemyShip {
         const ctx = state.ctx;
 
         ctx.beginPath();
-        ctx.rect(this.state.position.x, this.state.position.y, this.width, this.height);
+        ctx.rect(this.state.position.x, this.state.position.y, this.state.size.width, this.state.size.height);
         ctx.closePath();
 
         ctx.fillStyle = this.color;

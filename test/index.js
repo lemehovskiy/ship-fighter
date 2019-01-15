@@ -3191,7 +3191,12 @@ var Game = function () {
                 for (b; b > -1; --b) {
                     var item1 = items1[a];
                     var item2 = items2[b];
-                    if (this.checkCollision(item1, item2)) {
+
+                    if (item1.collisionType == 'circle' && item2.collisionType == 'circle' && this.checkCollisionCircleCircle(item1, item2)) {
+                        item1.destroy();
+                        item2.destroy();
+                    } else if (item1.collisionType == 'rect' && item2.collisionType == 'circle' || item2.collisionType == 'rect' && item1.collisionType == 'circle' && this.checkCollisionRectCircle(item1, item2)) {
+                        console.log('asdf');
                         item1.destroy();
                         item2.destroy();
                     }
@@ -3199,15 +3204,49 @@ var Game = function () {
             }
         }
     }, {
-        key: "checkCollision",
-        value: function checkCollision(obj1, obj2) {
-            var vx = obj1.position.x - obj2.position.x;
-            var vy = obj1.position.y - obj2.position.y;
+        key: "checkCollisionCircleCircle",
+        value: function checkCollisionCircleCircle(obj1, obj2) {
+            var vx = obj1.state.position.x - obj2.state.position.x;
+            var vy = obj1.state.position.y - obj2.state.position.y;
             var length = Math.sqrt(vx * vx + vy * vy);
-            if (length < obj1.radius + obj2.radius) {
+            if (length < obj1.state.radius + obj2.state.radius) {
                 return true;
             }
             return false;
+        }
+    }, {
+        key: "checkCollisionRectCircle",
+        value: function checkCollisionRectCircle(obj1, obj2) {
+            var circleObj = {},
+                rectObj = {};
+
+            if (obj1.collisionType == 'circle') {
+                circleObj = obj1;
+                rectObj = obj2;
+            } else {
+                circleObj = obj2;
+                rectObj = obj1;
+            }
+            var distX = Math.abs(circleObj.state.position.x - rectObj.state.position.x - rectObj.state.size.width / 2);
+            var distY = Math.abs(circleObj.state.position.y - rectObj.state.position.y - rectObj.state.size.height / 2);
+
+            if (distX > rectObj.state.size.width / 2 + circleObj.state.radius) {
+                return false;
+            }
+            if (distY > rectObj.state.size.height / 2 + circleObj.state.radius) {
+                return false;
+            }
+
+            if (distX <= rectObj.state.size.width / 2) {
+                return true;
+            }
+            if (distY <= rectObj.state.size.height / 2) {
+                return true;
+            }
+
+            var dx = distX - rectObj.state.size.width / 2;
+            var dy = distY - rectObj.state.size.height / 2;
+            return dx * dx + dy * dy <= circleObj.state.radius * circleObj.state.radius;
         }
     }, {
         key: "updateObjects",
@@ -3258,8 +3297,7 @@ var Game = function () {
             //     restart();
             // }
 
-            // this.checkCollisionsWith(this.bullets, this.asteroids);
-            // this.checkCollisionsWith(this.ship, this.asteroids);
+            this.checkCollisionsWith(this.bullets, this.enemies);
 
             // Remove or render
             // this.updateObjects(this.particles, 'particles')
@@ -3315,10 +3353,6 @@ var ShipFighter = function () {
         this.shipColor = '#ffff11';
         this.height = 25;
         this.width = 20;
-        this.position = {
-            x: args.position.x,
-            y: args.position.y
-        };
         this.velocity = {
             x: 0
         };
@@ -3332,6 +3366,13 @@ var ShipFighter = function () {
         this.weapon = new _Weapon2.default({
             ship: this
         });
+
+        this.state = {
+            position: {
+                x: args.position.x,
+                y: args.position.y
+            }
+        };
     }
 
     _createClass(ShipFighter, [{
@@ -3350,15 +3391,15 @@ var ShipFighter = function () {
             var ctx = state.ctx;
 
             ctx.beginPath();
-            ctx.moveTo(this.position.x + this.width / 2, this.position.y);
-            ctx.lineTo(this.position.x, this.position.y + this.height);
-            ctx.lineTo(this.position.x + this.width, this.position.y + this.height);
+            ctx.moveTo(this.state.position.x + this.width / 2, this.state.position.y);
+            ctx.lineTo(this.state.position.x, this.state.position.y + this.height);
+            ctx.lineTo(this.state.position.x + this.width, this.state.position.y + this.height);
             ctx.closePath();
             ctx.fillStyle = this.shipColor;
             ctx.fill();
 
             if (!(this.velocity.x < 0.001 && this.velocity.x > -0.001)) {
-                this.position.x += this.velocity.x;
+                this.state.position.x += this.velocity.x;
                 this.velocity.x *= this.inertia;
             }
         }
@@ -3385,8 +3426,8 @@ var ShipFighter = function () {
         value: function shoot() {
             this.weapon.shoot({
                 position: {
-                    x: this.position.x,
-                    y: this.position.y
+                    x: this.state.position.x,
+                    y: this.state.position.y
                 }
             });
         }
@@ -8950,22 +8991,34 @@ var Bullet = function () {
     function Bullet(args) {
         _classCallCheck(this, Bullet);
 
-        this.x = args.position.x;
-        this.y = args.position.y;
-        this.size = 2;
         this.color = "#ffffff";
         this.parts = [];
         this.exploded = false;
+        this.collisionType = 'circle';
+        this.delete = false;
+
+        this.state = {
+            position: {
+                x: args.position.x,
+                y: args.position.y
+            },
+            radius: 2
+        };
     }
 
     _createClass(Bullet, [{
+        key: "destroy",
+        value: function destroy() {
+            this.delete = true;
+        }
+    }, {
         key: "render",
         value: function render(state) {
             var ctx = state.ctx;
-            this.y -= 3;
+            this.state.position.y -= 3;
 
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+            ctx.arc(this.state.position.x, this.state.position.y, this.state.radius, 0, 2 * Math.PI);
             ctx.closePath();
 
             ctx.fillStyle = this.color;
@@ -9005,20 +9058,32 @@ var EnemyShip = function () {
     function EnemyShip(args) {
         _classCallCheck(this, EnemyShip);
 
-        this.width = 10;
-        this.height = 20;
         this.exploded = false;
         this.color = "#FF0000";
+        this.collisionType = 'rect';
+        this.delete = false;
 
         this.state = {
             position: {
-                x: _.random(0, args.screen.width - this.width),
-                y: -this.height
+                x: 0,
+                y: 0
+            },
+            size: {
+                width: 10,
+                height: 20
             }
         };
+
+        this.state.position.x = _.random(0, args.screen.width - this.state.size.width);
+        this.state.position.y = -this.state.size.height;
     }
 
     _createClass(EnemyShip, [{
+        key: "destroy",
+        value: function destroy() {
+            this.delete = true;
+        }
+    }, {
         key: "explode",
         value: function explode() {
             console.log('enemyExplode');
@@ -9090,7 +9155,7 @@ var EnemyShip = function () {
             var ctx = state.ctx;
 
             ctx.beginPath();
-            ctx.rect(this.state.position.x, this.state.position.y, this.width, this.height);
+            ctx.rect(this.state.position.x, this.state.position.y, this.state.size.width, this.state.size.height);
             ctx.closePath();
 
             ctx.fillStyle = this.color;

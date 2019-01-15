@@ -7,10 +7,6 @@ class ShipFighter {
         this.shipColor = '#ffff11';
         this.height = 25;
         this.width = 20;
-        this.position = {
-            x: args.position.x,
-            y: args.position.y
-        };
         this.velocity = {
             x: 0
         };
@@ -24,6 +20,13 @@ class ShipFighter {
         this.weapon = new Weapon({
             ship: this
         });
+
+        this.state = {
+            position: {
+                x: args.position.x,
+                y: args.position.y
+            }
+        }
     }
 
 
@@ -41,16 +44,16 @@ class ShipFighter {
         const ctx = state.ctx;
 
         ctx.beginPath();
-        ctx.moveTo(this.position.x + this.width / 2, this.position.y);
-        ctx.lineTo(this.position.x, this.position.y + this.height);
-        ctx.lineTo(this.position.x + this.width, this.position.y + this.height);
+        ctx.moveTo(this.state.position.x + this.width / 2, this.state.position.y);
+        ctx.lineTo(this.state.position.x, this.state.position.y + this.height);
+        ctx.lineTo(this.state.position.x + this.width, this.state.position.y + this.height);
         ctx.closePath();
         ctx.fillStyle = this.shipColor;
         ctx.fill();
 
 
         if (!(this.velocity.x < 0.001 && this.velocity.x > -0.001)) {
-            this.position.x += this.velocity.x;
+            this.state.position.x += this.velocity.x;
             this.velocity.x *= this.inertia;
         }
     }
@@ -77,8 +80,8 @@ class ShipFighter {
     shoot() {
         this.weapon.shoot({
             position: {
-                x: this.position.x,
-                y: this.position.y
+                x: this.state.position.x,
+                y: this.state.position.y
             }
         });
     }

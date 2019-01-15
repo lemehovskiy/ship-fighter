@@ -4,7 +4,7 @@ import ShipFighter from "./ShipFighter.es6";
 import EnemyShip from "./EnemyShip.es6";
 
 const KEY = {
-    LEFT:  37,
+    LEFT: 37,
     RIGHT: 39,
     SPACE: 32
 };
@@ -24,9 +24,9 @@ class Game {
             lives: 5,
             score: 0,
             keys: {
-                left  : 0,
-                right : 0,
-                space : 0
+                left: 0,
+                right: 0,
+                space: 0
             }
         }
 
@@ -40,12 +40,12 @@ class Game {
 
 
         let shipFighter = new ShipFighter({
-                position: {
-                    x: this.state.canvas.width / 2,
-                    y: this.state.canvas.height - 25
-                },
-                create: this.createObject.bind(this)
-            })
+            position: {
+                x: this.state.canvas.width / 2,
+                y: this.state.canvas.height - 25
+            },
+            create: this.createObject.bind(this)
+        })
 
 
         this.createObject(shipFighter, 'shipFighters');
@@ -55,11 +55,10 @@ class Game {
 
         this.update();
 
-        window.addEventListener('keyup',   this.handleKeys.bind(this, false));
+        window.addEventListener('keyup', this.handleKeys.bind(this, false));
         window.addEventListener('keydown', this.handleKeys.bind(this, true));
 
 
-        
         // function render_bullets() {
         //     self.shipFighter.bullets.forEach(function (bullet, bullet_index) {
         //
@@ -137,15 +136,15 @@ class Game {
     }
 
 
-    handleKeys(value, e){
+    handleKeys(value, e) {
         let keys = this.state.keys;
-        if(e.keyCode === KEY.LEFT ) keys.left  = value;
-        if(e.keyCode === KEY.RIGHT) keys.right = value;
-        if(e.keyCode === KEY.SPACE) keys.space = value;
+        if (e.keyCode === KEY.LEFT) keys.left = value;
+        if (e.keyCode === KEY.RIGHT) keys.right = value;
+        if (e.keyCode === KEY.SPACE) keys.space = value;
         this.state.keys = keys;
     }
 
-    createObject(item, group){
+    createObject(item, group) {
         this[group].push(item);
     }
 
@@ -163,7 +162,7 @@ class Game {
     }
 
 
-    createEnemy(){
+    createEnemy() {
         let enemy = new EnemyShip({
             screen: {
                 width: this.state.screen.width
@@ -176,12 +175,18 @@ class Game {
     checkCollisionsWith(items1, items2) {
         var a = items1.length - 1;
         var b;
-        for(a; a > -1; --a){
+        for (a; a > -1; --a) {
             b = items2.length - 1;
-            for(b; b > -1; --b){
+            for (b; b > -1; --b) {
                 var item1 = items1[a];
                 var item2 = items2[b];
-                if(this.checkCollision(item1, item2)){
+
+                if (item1.collisionType == 'circle' && item2.collisionType == 'circle' && this.checkCollisionCircleCircle(item1, item2)) {
+                    item1.destroy();
+                    item2.destroy();
+                }
+                else if (item1.collisionType == 'rect' && item2.collisionType == 'circle' || item2.collisionType == 'rect' && item1.collisionType == 'circle' && this.checkCollisionRectCircle(item1, item2)) {
+                    console.log('asdf');
                     item1.destroy();
                     item2.destroy();
                 }
@@ -189,22 +194,56 @@ class Game {
         }
     }
 
-    checkCollision(obj1, obj2){
-        var vx = obj1.position.x - obj2.position.x;
-        var vy = obj1.position.y - obj2.position.y;
+    checkCollisionCircleCircle(obj1, obj2) {
+        var vx = obj1.state.position.x - obj2.state.position.x;
+        var vy = obj1.state.position.y - obj2.state.position.y;
         var length = Math.sqrt(vx * vx + vy * vy);
-        if(length < obj1.radius + obj2.radius){
+        if (length < obj1.state.radius + obj2.state.radius) {
             return true;
         }
         return false;
     }
 
-    updateObjects(items, group){
+    checkCollisionRectCircle(obj1, obj2) {
+        let circleObj = {},
+            rectObj = {};
+
+        if (obj1.collisionType == 'circle') {
+            circleObj = obj1;
+            rectObj = obj2;
+        }
+        else {
+            circleObj = obj2;
+            rectObj = obj1;
+        }
+        var distX = Math.abs(circleObj.state.position.x - rectObj.state.position.x - rectObj.state.size.width / 2);
+        var distY = Math.abs(circleObj.state.position.y - rectObj.state.position.y - rectObj.state.size.height / 2);
+
+        if (distX > (rectObj.state.size.width / 2 + circleObj.state.radius)) {
+            return false;
+        }
+        if (distY > (rectObj.state.size.height / 2 + circleObj.state.radius)) {
+            return false;
+        }
+
+        if (distX <= (rectObj.state.size.width / 2)) {
+            return true;
+        }
+        if (distY <= (rectObj.state.size.height / 2)) {
+            return true;
+        }
+
+        var dx = distX - rectObj.state.size.width / 2;
+        var dy = distY - rectObj.state.size.height / 2;
+        return (dx * dx + dy * dy <= (circleObj.state.radius * circleObj.state.radius));
+    }
+
+    updateObjects(items, group) {
         let index = 0;
         for (let item of items) {
             if (item.delete) {
                 this[group].splice(index, 1);
-            }else{
+            } else {
                 items[index].render(this.state);
             }
             index++;
@@ -217,7 +256,6 @@ class Game {
         this.state.ctx.fillRect(0, 0, this.state.screen.width, this.state.screen.height);
 
 
-
         // updateLives();
 
         // updateScore();
@@ -226,8 +264,7 @@ class Game {
         //     restart();
         // }
 
-        // this.checkCollisionsWith(this.bullets, this.asteroids);
-        // this.checkCollisionsWith(this.ship, this.asteroids);
+        this.checkCollisionsWith(this.bullets, this.enemies);
 
         // Remove or render
         // this.updateObjects(this.particles, 'particles')
