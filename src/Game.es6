@@ -152,22 +152,25 @@ class Game {
     createEnemies() {
         let self = this;
 
-        let enemy = new EnemyShip(self.state.canvas);
-        self.enemies.push(enemy);
+        this.createEnemy();
 
         let emenies_interval = setInterval(function () {
+            if (window.blurred) return;
 
-            if (window.blurred) {
-                return;
+            self.createEnemy();
+
+        }, 1000)
+    }
+
+
+    createEnemy(){
+        let enemy = new EnemyShip({
+            screen: {
+                width: this.state.screen.width
             }
+        });
 
-            let enemy = new EnemyShip(self.state.canvas);
-
-            self.enemies.push(enemy);
-
-        }, 2000)
-
-
+        this.createObject(enemy, 'enemies');
     }
 
     checkCollisionsWith(items1, items2) {
@@ -197,7 +200,6 @@ class Game {
     }
 
     updateObjects(items, group){
-
         let index = 0;
         for (let item of items) {
             if (item.delete) {
@@ -215,9 +217,6 @@ class Game {
         this.state.ctx.fillRect(0, 0, this.state.screen.width, this.state.screen.height);
 
 
-        // self.shipFighter.draw();
-
-        // render_bullets();
 
         // updateLives();
 
@@ -235,6 +234,7 @@ class Game {
         // this.updateObjects(this.asteroids, 'asteroids')
         this.updateObjects(this.bullets, 'bullets')
         this.updateObjects(this.shipFighters, 'shipFighters')
+        this.updateObjects(this.enemies, 'enemies');
         //
         //
         // this.enemies.forEach(function(enemy){

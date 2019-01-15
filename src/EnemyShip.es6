@@ -2,18 +2,18 @@ var _ = require('lodash');
 import Part from "./Part.es6";
 
 class EnemyShip {
-    constructor(canvas) {
-        let self = this;
+    constructor(args) {
+        this.width = 10;
+        this.height = 20;
+        this.exploded = false;
+        this.color = "#FF0000";
 
-        self.exploded = false;
-        self.width = 10;
-        self.height = 20;
-
-        self.color = "#FF0000";
-
-        self.x = _.random(0, canvas.width - self.width);
-        self.y = -self.height;
-
+        this.state = {
+            position: {
+                x: _.random(0, args.screen.width - this.width),
+                y: -this.height
+            }
+        }
     }
 
     explode(){
@@ -72,9 +72,9 @@ class EnemyShip {
     //     })
     // }
 
-    render(ctx){
-        this.y++;
-        this.draw(ctx);
+    render(state){
+        this.state.position.y++;
+        this.draw(state);
     }
 
     draw(state) {
@@ -82,19 +82,12 @@ class EnemyShip {
         const ctx = state.ctx;
 
         ctx.beginPath();
-        ctx.rect(this.x, this.y, this.width, this.height);
+        ctx.rect(this.state.position.x, this.state.position.y, this.width, this.height);
         ctx.closePath();
 
         ctx.fillStyle = this.color;
         ctx.fill();
 
-
-        // if (self.exploded){
-        //     console.log('asdf');
-        //     self.drawExplode()
-        // }
-        //
-        // requestAnimationFrame(self.draw.bind(this));
     }
 }
 

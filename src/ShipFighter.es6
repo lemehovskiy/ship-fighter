@@ -24,8 +24,6 @@ class ShipFighter {
         this.weapon = new Weapon({
             ship: this
         });
-
-        console.log(this.velocity);
     }
 
 
@@ -57,18 +55,7 @@ class ShipFighter {
         }
     }
 
-    // stop() {
-    //
-    //     let self = this;
-    //     TweenMax.to(self, 0.5, {velocity: 0});
-    //
-    // }
-
     accelerate(direction){
-
-        console.log(this.velocity.x);
-
-
         if (direction == "LEFT" && this.velocity.x > -this.maxVelocity) {
             this.velocity.x -= 1;
         }
@@ -95,32 +82,6 @@ class ShipFighter {
             }
         });
     }
-
-    // controls() {
-    //     let self = this;
-    //     document.addEventListener("keydown", function (e) {
-    //
-    //         switch (e.keyCode) {
-    //             case 37:
-    //                 self.move('left');
-    //                 break;
-    //             case 39:
-    //                 self.move('right');
-    //                 break;
-    //             case 32:
-    //                 self.shoot();
-    //                 break;
-    //         }
-    //     });
-    //
-    //     document.addEventListener("keyup", function (e) {
-    //
-    //         if (e.keyCode == 37 || e.keyCode == 39) {
-    //             self.stop();
-    //         }
-    //
-    //     });
-    // }
 }
 
 export default ShipFighter;

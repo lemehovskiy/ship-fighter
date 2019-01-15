@@ -3162,19 +3162,24 @@ var Game = function () {
         value: function createEnemies() {
             var self = this;
 
-            var enemy = new _EnemyShip2.default(self.state.canvas);
-            self.enemies.push(enemy);
+            this.createEnemy();
 
             var emenies_interval = setInterval(function () {
+                if (window.blurred) return;
 
-                if (window.blurred) {
-                    return;
+                self.createEnemy();
+            }, 1000);
+        }
+    }, {
+        key: "createEnemy",
+        value: function createEnemy() {
+            var enemy = new _EnemyShip2.default({
+                screen: {
+                    width: this.state.screen.width
                 }
+            });
 
-                var enemy = new _EnemyShip2.default(self.state.canvas);
-
-                self.enemies.push(enemy);
-            }, 2000);
+            this.createObject(enemy, 'enemies');
         }
     }, {
         key: "checkCollisionsWith",
@@ -3207,7 +3212,6 @@ var Game = function () {
     }, {
         key: "updateObjects",
         value: function updateObjects(items, group) {
-
             var index = 0;
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
@@ -3246,10 +3250,6 @@ var Game = function () {
             this.state.ctx.fillStyle = "rgba(0,0,0,0.6)";
             this.state.ctx.fillRect(0, 0, this.state.screen.width, this.state.screen.height);
 
-            // self.shipFighter.draw();
-
-            // render_bullets();
-
             // updateLives();
 
             // updateScore();
@@ -3266,6 +3266,7 @@ var Game = function () {
             // this.updateObjects(this.asteroids, 'asteroids')
             this.updateObjects(this.bullets, 'bullets');
             this.updateObjects(this.shipFighters, 'shipFighters');
+            this.updateObjects(this.enemies, 'enemies');
             //
             //
             // this.enemies.forEach(function(enemy){
@@ -3331,8 +3332,6 @@ var ShipFighter = function () {
         this.weapon = new _Weapon2.default({
             ship: this
         });
-
-        console.log(this.velocity);
     }
 
     _createClass(ShipFighter, [{
@@ -3363,20 +3362,9 @@ var ShipFighter = function () {
                 this.velocity.x *= this.inertia;
             }
         }
-
-        // stop() {
-        //
-        //     let self = this;
-        //     TweenMax.to(self, 0.5, {velocity: 0});
-        //
-        // }
-
     }, {
         key: "accelerate",
         value: function accelerate(direction) {
-
-            console.log(this.velocity.x);
-
             if (direction == "LEFT" && this.velocity.x > -this.maxVelocity) {
                 this.velocity.x -= 1;
             } else if (direction == 'RIGHT' && this.velocity.x < this.maxVelocity) {
@@ -3402,33 +3390,6 @@ var ShipFighter = function () {
                 }
             });
         }
-
-        // controls() {
-        //     let self = this;
-        //     document.addEventListener("keydown", function (e) {
-        //
-        //         switch (e.keyCode) {
-        //             case 37:
-        //                 self.move('left');
-        //                 break;
-        //             case 39:
-        //                 self.move('right');
-        //                 break;
-        //             case 32:
-        //                 self.shoot();
-        //                 break;
-        //         }
-        //     });
-        //
-        //     document.addEventListener("keyup", function (e) {
-        //
-        //         if (e.keyCode == 37 || e.keyCode == 39) {
-        //             self.stop();
-        //         }
-        //
-        //     });
-        // }
-
     }]);
 
     return ShipFighter;
@@ -9041,19 +9002,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var _ = __webpack_require__(19);
 
 var EnemyShip = function () {
-    function EnemyShip(canvas) {
+    function EnemyShip(args) {
         _classCallCheck(this, EnemyShip);
 
-        var self = this;
+        this.width = 10;
+        this.height = 20;
+        this.exploded = false;
+        this.color = "#FF0000";
 
-        self.exploded = false;
-        self.width = 10;
-        self.height = 20;
-
-        self.color = "#FF0000";
-
-        self.x = _.random(0, canvas.width - self.width);
-        self.y = -self.height;
+        this.state = {
+            position: {
+                x: _.random(0, args.screen.width - this.width),
+                y: -this.height
+            }
+        };
     }
 
     _createClass(EnemyShip, [{
@@ -9117,9 +9079,9 @@ var EnemyShip = function () {
 
     }, {
         key: "render",
-        value: function render(ctx) {
-            this.y++;
-            this.draw(ctx);
+        value: function render(state) {
+            this.state.position.y++;
+            this.draw(state);
         }
     }, {
         key: "draw",
@@ -9128,18 +9090,11 @@ var EnemyShip = function () {
             var ctx = state.ctx;
 
             ctx.beginPath();
-            ctx.rect(this.x, this.y, this.width, this.height);
+            ctx.rect(this.state.position.x, this.state.position.y, this.width, this.height);
             ctx.closePath();
 
             ctx.fillStyle = this.color;
             ctx.fill();
-
-            // if (self.exploded){
-            //     console.log('asdf');
-            //     self.drawExplode()
-            // }
-            //
-            // requestAnimationFrame(self.draw.bind(this));
         }
     }]);
 
